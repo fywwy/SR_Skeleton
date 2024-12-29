@@ -1,0 +1,96 @@
+{
+    "name": "ntu_expressive_keypoints",
+    "phase": "train", // train or val
+    "gpu_ids": [
+        0
+    ],
+    "path": { //set the path
+        "log": "logs",
+        "tb_logger": "tb_logger",
+        "results": "results",
+        "checkpoint": "checkpoint",
+        "resume_state": "sr/experiments/ntu_expressive_keypoints_241205_112301/checkpoint/I4000_E1"
+//        "resume_state": null //pretrain model or training state
+    },
+    "datasets": {
+        "train": {
+            "name": "ntu_expresive_train",
+            "mode": "LRHR", // whether need LR img
+            "dataroot": "./output/train",
+            "datatype": "npy", //lmdb or img, path of img files
+            "l_resolution": 5, // low resolution need to super_resolution
+            "r_resolution": 8, // high resolution
+            "batch_size": 1,
+            "num_workers": 0,
+            "use_shuffle": true,
+            "data_len": -1 // -1 represents all data used in train
+        },
+        "val": {
+            "name": "ntu_expressive_val",
+            "mode": "LRHR",
+            "dataroot": "./output/val",
+            "datatype": "npy", //lmdb or img, path of img files
+            "l_resolution": 5,
+            "r_resolution": 8,
+            "data_len": 10 // data length in validation
+        }
+    },
+    "model": {
+        "which_model_G": "sr3", // use the ddpm or sr3 network structure
+        "finetune_norm": false,
+        "unet": {
+            "in_channel": 6,
+            "out_channel": 3,
+            "inner_channel": 64,
+            "channel_multiplier": [
+                1,
+                2,
+                4,
+                8,
+                8
+            ],
+            "attn_res": [
+                16
+            ],
+            "res_blocks": 2,
+            "dropout": 0.2
+        },
+        "beta_schedule": { // use munual beta_schedule for acceleration
+            "train": {
+                "schedule": "linear",
+                "n_timestep": 2000,
+                "linear_start": 1e-6,
+                "linear_end": 1e-2
+            },
+            "val": {
+                "schedule": "linear",
+                "n_timestep": 20,
+                "linear_start": 1e-6,
+                "linear_end": 1e-2
+            }
+        },
+        "diffusion": {
+            "image_size": 8,
+            "channels": 3, //sample channel
+            "conditional": true // unconditional generation or unconditional generation(super_resolution)
+        }
+    },
+    "train": {
+        "n_iter": 200,
+        "val_freq": 5,
+        "save_checkpoint_freq": 1000,
+        "print_freq":20,
+        "optimizer": {
+            "type": "adam",
+            "lr": 1e-4
+        },
+        "ema_scheduler": { // not used now
+            "step_start_ema": 2,
+            "update_ema_every": 1,
+            "ema_decay": 0.9999
+        }
+    },
+    "wandb": {
+        "project": "sr_ffhq"
+    }
+}
